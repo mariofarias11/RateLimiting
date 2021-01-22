@@ -18,13 +18,16 @@ namespace RateLimiting.Host.Cache
 
         public bool Verify(HttpContext context, string requestName, int seconds, int limitRequests)
         {
+            //identify the requestor
             var ipAddress = context.Connection.RemoteIpAddress;
             var memoryCacheKey = requestName + "-" + ipAddress;
-            
-            var knownRequestor = _memoryCache.TryGetValue(memoryCacheKey, out int attempts);
+
+            //check if it is the requestor's first time
+                        var knownRequestor = _memoryCache.TryGetValue(memoryCacheKey, out int attempts);
 
             if (!knownRequestor)
             {
+                //add the key(method requested + ip) of requestor in cache
                 var cacheEntryOptions = new MemoryCacheEntryOptions().SetAbsoluteExpiration(TimeSpan.FromSeconds(seconds));
                 _memoryCache.Set(memoryCacheKey, 1, cacheEntryOptions);
             }
@@ -32,6 +35,7 @@ namespace RateLimiting.Host.Cache
             {
                 if(attempts < limitRequests)
                 {
+                    //update the count attempts of the requestor
                     _memoryCache.Set(memoryCacheKey, attempts + 1);
                 }
                 else
